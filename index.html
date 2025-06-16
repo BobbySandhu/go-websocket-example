@@ -3,15 +3,108 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebSocket Client</title>
+    <title>WebSocket Chat</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f7f9fc;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #333;
+        margin: 1rem 0;
+      }
+
+      .chat-container {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 600px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      #messages {
+        flex: 1;
+        padding: 1rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      #messages p {
+        margin: 0.5rem 0;
+        padding: 0.5rem;
+        background: #e6f3ff;
+        border-radius: 4px;
+      }
+
+      .input-container {
+        display: flex;
+        padding: 1rem;
+        gap: 0.5rem;
+        border-top: 1px solid #eee;
+        background: #fff;
+      }
+
+      input[type='text'] {
+        flex: 1;
+        padding: 0.5rem;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+
+      button {
+        padding: 0.5rem 1rem;
+        font-size: 1rem;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      button:hover {
+        background: #0056b3;
+      }
+
+      .wrapper {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+        max-width: 600px;
+        flex: 1;
+      }
+    </style>
   </head>
   <body>
-    <h1>WebSocket Client</h1>
-    <div>
-      <input type="text" id="messageInput" placeholder="Enter your message" />
-      <button onclick="sendMessage()">Send</button>
+    <h1>WebSocket Chat</h1>
+
+    <div class="wrapper">
+      <div class="chat-container">
+        <div id="messages"></div>
+        <div class="input-container">
+          <input
+            type="text"
+            id="messageInput"
+            placeholder="Type a message..."
+          />
+          <button onclick="sendMessage()">Send</button>
+        </div>
+      </div>
     </div>
-    <div id="messages"></div>
 
     <script>
       let ws;
@@ -20,17 +113,18 @@
         ws = new WebSocket('ws://localhost:1234/ws');
 
         ws.onopen = function () {
-          console.log('Connected to WebSocket server');
+          console.log('✅ Connected to WebSocket server');
+          displayMessage('🔗 Connected to server');
         };
 
         ws.onmessage = function (event) {
-          let messageDisplay = document.getElementById('messages');
-          messageDisplay.innerHTML += `<p>${event.data}</p>`;
+          displayMessage(`📥 ${event.data}`);
         };
 
         ws.onclose = function () {
-          console.log('WebSocket connection closed, retrying...');
-          setTimeout(connect, 1000); // Reconnect after 1 second
+          console.log('❌ WebSocket closed. Reconnecting...');
+          displayMessage('⚠️ Disconnected. Reconnecting...');
+          setTimeout(connect, 1000);
         };
 
         ws.onerror = function (error) {
@@ -39,10 +133,21 @@
       }
 
       function sendMessage() {
-        let input = document.getElementById('messageInput');
-        let message = input.value;
-        ws.send(message);
-        input.value = '';
+        const input = document.getElementById('messageInput');
+        const message = input.value.trim();
+        if (message && ws.readyState === WebSocket.OPEN) {
+          ws.send(message);
+          displayMessage(`📤 You: ${message}`);
+          input.value = '';
+        }
+      }
+
+      function displayMessage(msg) {
+        const container = document.getElementById('messages');
+        const p = document.createElement('p');
+        p.textContent = msg;
+        container.appendChild(p);
+        container.scrollTop = container.scrollHeight; // Scroll to bottom
       }
 
       connect();
